@@ -112,4 +112,3 @@ class PlaceImageViewSet(viewsets.ViewSet):
         all_images = PlaceImage.objects.all()
         serializer = PlaceImageSerializer(all_images, many=True)
         return Response(serializer.data)
-
