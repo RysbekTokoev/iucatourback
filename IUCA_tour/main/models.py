@@ -38,6 +38,12 @@ class PlaceDesc(models.Model):
     def __str__(self):
         return self.lang + str(self.place)
 
+    def save(self, *args, **kwargs):
+        obj = PlaceDesc.objects.filter(place=self.place, lang=self.lang)
+        if obj:
+            return obj
+        return super(PlaceDesc, self).save(*args, **kwargs)
+
 
 class Preset(models.Model):
     name = models.CharField(max_length=32)
