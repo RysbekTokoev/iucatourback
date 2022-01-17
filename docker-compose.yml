@@ -5,7 +5,7 @@ services:
     container_name: dj_tour
     volumes:
       - static:/static
-    build: .
+    build:
       dockerfile: DockerFile
       context: .
     ports: 
