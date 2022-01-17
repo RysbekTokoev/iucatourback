@@ -12,5 +12,4 @@ WORKDIR /app
 COPY ./entrypoint.sh /
 RUN python manage.py makemigrations
 RUN python manage.py makemigrations main
-RUN python manage.py migrate
-RUN python manage.py collectstatic --no-input
+ENTRYPOINT ["sh", "/entrypoint.sh"]
