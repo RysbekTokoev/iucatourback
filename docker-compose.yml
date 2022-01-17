@@ -10,7 +10,6 @@ services:
       - "8010:8010"
     volumes: 
       - ./IUCA_tour:/IUCA_tour
-  
-    
-  
-
+      - static:/static
+volumes:
+  static:
