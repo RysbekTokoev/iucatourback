@@ -8,8 +8,18 @@ services:
     build:
       dockerfile: DockerFile
       context: .
-    command: python manage.py runserver 0.0.0.0:8010
     ports: 
       - "8010:8010"
+      -
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: DockerFile
+    volumes:
+      - static:/static
+    ports:
+      - "80:80"
+    depends_on:
+      - config
 volumes:
   static:
