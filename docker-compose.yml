@@ -19,6 +19,6 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - config
+      - dj_tour
 volumes:
   static:
