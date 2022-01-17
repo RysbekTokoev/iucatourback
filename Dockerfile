@@ -12,4 +12,6 @@ WORKDIR /app
 COPY ./entrypoint.sh /
 RUN python manage.py makemigrations
 RUN python manage.py makemigrations main
-ENTRYPOINT ["sh", "/entrypoint.sh"]
+RUN python manage.py migrate
+RUN python manage.py collectstatic
+RUN gunicorn config.wsgi:application --bind 0.0.0.0:8010
