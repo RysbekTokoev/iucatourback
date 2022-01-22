@@ -1,16 +1,32 @@
 version: "3"
    
 services:
-  
-  dj_tour:
-    container_name: dj_tour
+  djangoapp:
     build: .
-    command: python manage.py runserver 0.0.0.0:8010
-    ports: 
-      - "8010:8010"
-    volumes: 
-      - ./IUCA_tour:/IUCA_tour
+    volumes:
+      - .:/opt/services/djangoapp/src
+      - static_volume:/opt/services/djangoapp/static  # <-- bind the static volume
+      - media_volume:/opt/services/djangoapp/media  # <-- bind the media volume
+    networks: 
+      - nginx_network
   
-    
+  nginx:
+    image: nginx:1.13
+    ports:
+      - 8000:80
+    volumes:
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - static_volume:/opt/services/djangoapp/static  # <-- bind the static volume
+      - media_volume:/opt/services/djangoapp/media  # <-- bind the media volume
+    depends_on:
+      - djangoapp
+    networks:
+      - nginx_network
   
-
+networks:
+  nginx_network:
+    driver: bridge  
+  
+volumes:
+  static_volume:  # <-- declare the static volume
+  media_volume:  # <-- declare the media volume
