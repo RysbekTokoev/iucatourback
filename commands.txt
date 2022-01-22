@@ -1,5 +1,7 @@
 sudo docker-compose run djangoapp IUCA_tour/manage.py collectstatic --no-input  # update static
 
+sudo docker-compose run djangoapp IUCA_tour/manage.py createsuperuser # create super user
+
 sudo docker build . -t iuca_tour # create or update docker project
 
 sudo docker-compose up # start project
