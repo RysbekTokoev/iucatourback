@@ -4,6 +4,16 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
+from django.http import JsonResponse
+
+import os
+import json
+from pathlib import Path
+
+from rest_framework.parsers import JSONParser
+
+from .grauf_module import getPath
+
 from .models import Place, Preset, Review, PlaceImage, PlaceDesc, PlaceInPreset
 from .serializers import PlaceSerializer, ReviewSerializer, PresetSerializer, PlaceImageSerializer, PlaceDescSerializer, PlaceInPresetSerializer
 
@@ -112,3 +122,42 @@ class PlaceImageViewSet(viewsets.ViewSet):
         all_images = PlaceImage.objects.all()
         serializer = PlaceImageSerializer(all_images, many=True)
         return Response(serializer.data)
+        
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent  
+
+def get_image_view(request):
+
+    # получение пораметров
+    _from = request.GET.get('from', '')
+    _to = request.GET.get('to', '')
+
+    # проверка на наличие существующего маршрута
+    if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg')):
+        return JsonResponse(status=200, data={'status': 'true', 'message': {
+            "ground_flour": f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg',
+            "first_flour": f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg',
+            "second_flour": f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg',
+            "third_flor": f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'}})
+
+    # генерирование маршрута
+    maps_ = getPath(_from, _to)
+    # except:
+    #     return JsonResponse(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
+
+    map = {}
+
+    map['slug'] = f'{_from}_{_to}'
+
+    map['ground_floor'] = maps_[0]
+    map['first_floor'] = maps_[1]
+    map['second_floor'] = maps_[2]
+    map['third_floor'] = maps_[3]
+
+    return JsonResponse(status=200, data={'status': 'true', 'message': {
+        "ground_floor": map['ground_floor'],
+        "first_floor": map['first_floor'],
+        "second_floor": map['second_floor'],
+        "third_floor": map['third_floor']
+    }})
+
