@@ -18,6 +18,7 @@ from .serializers import PlaceSerializer, ReviewSerializer, PresetSerializer, Pl
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Place.objects.all()
     serializer_class = PlaceSerializer
@@ -77,19 +78,12 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request):
         presets = Preset.objects.all()
-        serializerPreset = PresetSerializer(presets, many=True)
-        data = serializerPreset.data.copy()
+        data = PresetSerializer(presets, many=True).data.copy()
 
         for i, x in enumerate(data):
-            places = PlaceInPreset.objects.filter(preset=x['id'])
-            serializerPlace = PlaceInPresetSerializer(places, many=True).data.copy()
-            for j, place in enumerate(serializerPlace):
-                if j == 0:
-                    maps = {}
-                else:
-                    maps = generate_maps(serializerPlace[j-1]['onMap'], serializerPlace[j]['onMap'])
-                serializerPlace[j].update({"maps": maps})
-            data[i].update({"places": [place for place in serializerPlace]})
+            places_in_preset = PlaceInPreset.objects.filter(preset=x['id']).order_by('order')
+            places_in_preset_data = PlaceInPresetSerializer(places_in_preset_data, many=True).data.copy()
+            data[i].update({"places": [place for place in places_in_preset_data]})
 
         return Response(data)
 
@@ -102,12 +96,6 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
         places = PlaceInPreset.objects.filter(preset=data['id'])
         serializerPlace = PlaceInPresetSerializer(places, many=True)
-        for j, place in enumerate(serializerPlace):
-            if j == 0:
-                maps = {}
-            else:
-                maps = generate_maps(serializerPlace[j - 1]['onMap'], serializerPlace[j]['onMap'])
-            serializerPlace[j].update({"maps": maps})
         data.update({"places": [place for place in serializerPlace.data]})
 
         return Response(data)
