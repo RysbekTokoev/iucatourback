@@ -94,18 +94,19 @@ def draw_by_points(way):
         else:
             privius_point = way[i]
 
-    if not os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/')):
-        os.mkdir(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/'))
-
+#    if not os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/')):
+#        os.mkdir(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/'))
+    if not os.path.exists(f'media/map_output'):
+        os.mkdir(f'media/map_output')
     ground_floor_name = [os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/{way_name}_ground_floor.jpg'), f'media/map_output/{way_name}_ground_floor.jpg' ]
     first_floor_name = [os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f"media/map_output/{way_name}_first_floor.jpg"), f"media/map_output/{way_name}_first_floor.jpg"]
     second_floor_name = [os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f"media/map_output/{way_name}_second_floor.jpg"), f"media/map_output/{way_name}_second_floor.jpg"]
     third_floor_name = [os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f"media/map_output/{way_name}_third_floor.jpg"), f"media/map_output/{way_name}_third_floor.jpg"]
 
-    grounnd_floor.save(ground_floor_name[0])
-    first_floor.save(first_floor_name[0])
-    second_floor.save(second_floor_name[0])
-    third_floor.save(third_floor_name[0])
+    grounnd_floor.save(ground_floor_name[1])
+    first_floor.save(first_floor_name[1])
+    second_floor.save(second_floor_name[1])
+    third_floor.save(third_floor_name[1])
 
     return [ground_floor_name[1], first_floor_name[1], second_floor_name[1], third_floor_name[1]]
 

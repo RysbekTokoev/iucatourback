@@ -122,9 +122,9 @@ class PlaceImageViewSet(viewsets.ViewSet):
         all_images = PlaceImage.objects.all()
         serializer = PlaceImageSerializer(all_images, many=True)
         return Response(serializer.data)
-        
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent  
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def get_image_view(request):
 
@@ -132,18 +132,32 @@ def get_image_view(request):
     _from = request.GET.get('from', '')
     _to = request.GET.get('to', '')
 
-    # проверка на наличие существующего маршрута
-    if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg')):
+
+    if _from == '' and _to == '':
+        return JsonResponse(status=404, data={'status': 'false', 'message': 'предоставлены не верные параметры'})
+
+# проверка на наличие существующего маршрута
+    #if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg')):
+    #    return JsonResponse(status=200, data={'status': 'true', 'message': {
+    #        "ground_flour": f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg',
+    #        "first_flour": f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg',
+    #        "second_flour": f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg',
+    #        "third_flor": f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'}})
+
+
+
+    if os.path.exists(f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg') and os.path.exists(f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg') and os.path.exists(f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg') and os.path.exists(f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'):
         return JsonResponse(status=200, data={'status': 'true', 'message': {
             "ground_flour": f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg',
             "first_flour": f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg',
             "second_flour": f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg',
             "third_flor": f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'}})
 
-    # генерирование маршрута
-    maps_ = getPath(_from, _to)
-    # except:
-    #     return JsonResponse(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
+# генерирование маршрута
+    try:
+        maps_ = getPath(_from, _to)
+    except:
+        return JsonResponse(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
 
     map = {}
 
