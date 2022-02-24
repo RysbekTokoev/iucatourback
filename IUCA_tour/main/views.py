@@ -7,16 +7,16 @@ from rest_framework.response import Response
 from django.http import JsonResponse
 
 import os
-import json
 from pathlib import Path
-
-from rest_framework.parsers import JSONParser
 
 from .grauf_module import getPath
 
 from .models import Place, Preset, Review, PlaceImage, PlaceDesc, PlaceInPreset
-from .serializers import PlaceSerializer, ReviewSerializer, PresetSerializer, PlaceImageSerializer, PlaceDescSerializer, PlaceInPresetSerializer
+from .serializers import PlaceSerializer, ReviewSerializer, PresetSerializer, PlaceImageSerializer, PlaceDescSerializer, \
+    PlaceInPresetSerializer
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Place.objects.all()
@@ -82,8 +82,14 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
         for i, x in enumerate(data):
             places = PlaceInPreset.objects.filter(preset=x['id'])
-            serializerPlace = PlaceInPresetSerializer(places, many=True)
-            data[i].update({"places": [place for place in serializerPlace.data]})
+            serializerPlace = PlaceInPresetSerializer(places, many=True).data.copy()
+            for j, place in enumerate(serializerPlace):
+                if j == 0:
+                    maps = {}
+                else:
+                    maps = generate_maps(serializerPlace[j-1]['onMap'], serializerPlace[j]['onMap'])
+                serializerPlace[j].update({"maps": maps})
+            data[i].update({"places": [place for place in serializerPlace]})
 
         return Response(data)
 
@@ -96,6 +102,12 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
         places = PlaceInPreset.objects.filter(preset=data['id'])
         serializerPlace = PlaceInPresetSerializer(places, many=True)
+        for j, place in enumerate(serializerPlace):
+            if j == 0:
+                maps = {}
+            else:
+                maps = generate_maps(serializerPlace[j - 1]['onMap'], serializerPlace[j]['onMap'])
+            serializerPlace[j].update({"maps": maps})
         data.update({"places": [place for place in serializerPlace.data]})
 
         return Response(data)
@@ -123,55 +135,51 @@ class PlaceImageViewSet(viewsets.ViewSet):
         serializer = PlaceImageSerializer(all_images, many=True)
         return Response(serializer.data)
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 def get_image_view(request):
-
     # получение пораметров
     _from = request.GET.get('from', '')
     _to = request.GET.get('to', '')
 
-
-    if _from == '' and _to == '':
+    if _from == '' or _to == '':
         return JsonResponse(status=404, data={'status': 'false', 'message': 'предоставлены не верные параметры'})
 
-# проверка на наличие существующего маршрута
-    #if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg')) and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg')):
-    #    return JsonResponse(status=200, data={'status': 'true', 'message': {
-    #        "ground_flour": f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg',
-    #        "first_flour": f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg',
-    #        "second_flour": f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg',
-    #        "third_flor": f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'}})
+    maps = generate_maps(_from, _to)
+    if not maps:
+        return JsonResponse(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
+    else:
+        return JsonResponse(status=200, data={'status': 'true', 'message': {
+            "ground_floor": maps['ground_floor'],
+            "first_floor": maps['first_floor'],
+            "second_floor": maps['second_floor'],
+            "third_floor": maps['third_floor']
+        }})
 
 
-
-    if os.path.exists(f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg') and os.path.exists(f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg') and os.path.exists(f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg') and os.path.exists(f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'):
+def generate_maps(_from, _to):
+    if os.path.exists(f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg') and os.path.exists(
+            f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg') and os.path.exists(
+            f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg') and os.path.exists(
+            f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'):
         return JsonResponse(status=200, data={'status': 'true', 'message': {
             "ground_flour": f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg',
             "first_flour": f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg',
             "second_flour": f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg',
             "third_flor": f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'}})
 
-# генерирование маршрута
+    # генерирование маршрута
     try:
         maps_ = getPath(_from, _to)
     except:
-        return JsonResponse(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
+        return False
 
-    map = {}
+    maps = {}
 
-    map['slug'] = f'{_from}_{_to}'
+    maps['slug'] = f'{_from}_{_to}'
 
-    map['ground_floor'] = maps_[0]
-    map['first_floor'] = maps_[1]
-    map['second_floor'] = maps_[2]
-    map['third_floor'] = maps_[3]
+    maps['ground_floor'] = maps_[0]
+    maps['first_floor'] = maps_[1]
+    maps['second_floor'] = maps_[2]
+    maps['third_floor'] = maps_[3]
 
-    return JsonResponse(status=200, data={'status': 'true', 'message': {
-        "ground_floor": map['ground_floor'],
-        "first_floor": map['first_floor'],
-        "second_floor": map['second_floor'],
-        "third_floor": map['third_floor']
-    }})
-
+    return maps
