@@ -5,7 +5,7 @@ from rest_framework import serializers
 class PlaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Place
-        fields = ['id', 'name', 'onMap']
+        fields = ['id', 'unifiedName', 'onMap']
 
 
 class PlaceInPresetSerializer(serializers.ModelSerializer):

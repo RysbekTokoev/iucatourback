@@ -82,7 +82,7 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
         for i, x in enumerate(data):
             places_in_preset = PlaceInPreset.objects.filter(preset=x['id']).order_by('order')
-            places_in_preset_data = PlaceInPresetSerializer(places_in_preset_data, many=True).data.copy()
+            places_in_preset_data = PlaceInPresetSerializer(places_in_preset, many=True).data.copy()
             data[i].update({"places": [place for place in places_in_preset_data]})
 
         return Response(data)
@@ -122,6 +122,32 @@ class PlaceImageViewSet(viewsets.ViewSet):
         all_images = PlaceImage.objects.all()
         serializer = PlaceImageSerializer(all_images, many=True)
         return Response(serializer.data)
+
+
+class MapViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    http_method_names = ['get', 'head']
+
+    def list(self, request):
+        _from = request.GET.get('from', '')
+        _to = request.GET.get('to', '')
+
+        if _from == '' or _to == '':
+            return Response(status=404, data={'status': 'false', 'message': 'предоставлены не верные параметры'})
+
+        maps = generate_maps(_from, _to)
+        if not maps:
+            return Response(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
+        else:
+            return Response(status=200, data={'status': 'true', 'message': {
+                "ground_floor": maps['ground_floor'],
+                "first_floor": maps['first_floor'],
+                "second_floor": maps['second_floor'],
+                "third_floor": maps['third_floor']
+            }})
+
+    def retrieve(self, request):
+        pass
 
 
 def get_image_view(request):
