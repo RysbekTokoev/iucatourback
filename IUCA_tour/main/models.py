@@ -3,6 +3,7 @@ from django.db import models
 
 class Place(models.Model):
     unifiedName = models.CharField(max_length=32)
+    onMap = models.CharField(max_length=20)
 
     def __str__(self):
         return self.unifiedName
@@ -18,7 +19,6 @@ class PlaceDesc(models.Model):
     place = models.ForeignKey(Place, related_name='desc', on_delete=models.CASCADE)
     desc = models.TextField(max_length=256)
     audio = models.FileField(upload_to='audio/')
-    onMap = models.CharField(max_length=20)
 
     CHINESE = 'CHN'
     ENGLISH = 'ENG'
