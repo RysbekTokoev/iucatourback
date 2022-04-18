@@ -96,7 +96,7 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
         places = PlaceInPreset.objects.filter(preset=data['id'])
         serializerPlace = PlaceInPresetSerializer(places, many=True)
-        data.update({"places": [place for place in serializerPlace.data]})
+        data.update({"places": [place for place in sorted(serializerPlace.data, key=lambda x: x["order"])]})
 
         return Response(data)
 
