@@ -6,3 +6,4 @@ IUCA_tour/main/migrations/
 IUCA_tour/media/
 IUCA_tour/static/
 IUCA_tour/db.sqlite3
+env/

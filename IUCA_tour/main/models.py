@@ -1,8 +1,11 @@
 from django.db import models
-
+from io import BytesIO
+from PIL import Image
+from django.core.files import File
 
 class Place(models.Model):
     unifiedName = models.CharField(max_length=32)
+    onMap = models.CharField(max_length=20)
 
     def __str__(self):
         return self.unifiedName
@@ -12,6 +15,17 @@ class PlaceImage(models.Model):
     place = models.ForeignKey(Place, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to='images/')
 
+    def save(self, *args, **kwargs):
+        new_image = self.reduce_image_size(self.image)
+        self.image = new_image
+        super().save(*args, **kwargs)
+
+    def reduce_image_size(self, profile_pic):
+        img = Image.open(profile_pic)
+        thumb_io = BytesIO()
+        img.save(thumb_io, 'jpeg', quality = 70)
+        new_image = File(thumb_io, name=profile_pic.name)
+        return new_image
 
 class PlaceDesc(models.Model):
     name = models.CharField(max_length=32)

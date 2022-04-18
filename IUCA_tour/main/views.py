@@ -4,8 +4,19 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
+from django.http import JsonResponse
+
+import os
+from pathlib import Path
+
+from .grauf_module import getPath
+
 from .models import Place, Preset, Review, PlaceImage, PlaceDesc, PlaceInPreset
-from .serializers import PlaceSerializer, ReviewSerializer, PresetSerializer, PlaceImageSerializer, PlaceDescSerializer, PlaceInPresetSerializer
+from .serializers import PlaceSerializer, ReviewSerializer, PresetSerializer, PlaceImageSerializer, PlaceDescSerializer, \
+    PlaceInPresetSerializer
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
@@ -67,13 +78,12 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request):
         presets = Preset.objects.all()
-        serializerPreset = PresetSerializer(presets, many=True)
-        data = serializerPreset.data.copy()
+        data = PresetSerializer(presets, many=True).data.copy()
 
         for i, x in enumerate(data):
-            places = PlaceInPreset.objects.filter(preset=x['id'])
-            serializerPlace = PlaceInPresetSerializer(places, many=True)
-            data[i].update({"places": [place for place in serializerPlace.data]})
+            places_in_preset = PlaceInPreset.objects.filter(preset=x['id']).order_by('order')
+            places_in_preset_data = PlaceInPresetSerializer(places_in_preset, many=True).data.copy()
+            data[i].update({"places": [place for place in places_in_preset_data]})
 
         return Response(data)
 
@@ -86,7 +96,7 @@ class PresetViewSet(viewsets.ReadOnlyModelViewSet):
 
         places = PlaceInPreset.objects.filter(preset=data['id'])
         serializerPlace = PlaceInPresetSerializer(places, many=True)
-        data.update({"places": [place for place in serializerPlace.data]})
+        data.update({"places": [place for place in sorted(serializerPlace.data, key=lambda x: x["order"])]})
 
         return Response(data)
 
@@ -112,3 +122,78 @@ class PlaceImageViewSet(viewsets.ViewSet):
         all_images = PlaceImage.objects.all()
         serializer = PlaceImageSerializer(all_images, many=True)
         return Response(serializer.data)
+
+
+class MapViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    http_method_names = ['get', 'head']
+
+    def list(self, request):
+        _from = request.GET.get('from', '')
+        _to = request.GET.get('to', '')
+
+        if _from == '' or _to == '':
+            return Response(status=404, data={'status': 'false', 'message': 'предоставлены не верные параметры'})
+
+        maps = generate_maps(_from, _to)
+        if not maps:
+            return Response(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
+        else:
+            return Response(status=200, data={'status': 'true', 'message': {
+                "ground_floor": maps['ground_floor'],
+                "first_floor": maps['first_floor'],
+                "second_floor": maps['second_floor'],
+                "third_floor": maps['third_floor']
+            }})
+
+    def retrieve(self, request):
+        pass
+
+
+def get_image_view(request):
+    # получение пораметров
+    _from = request.GET.get('from', '')
+    _to = request.GET.get('to', '')
+
+    if _from == '' or _to == '':
+        return JsonResponse(status=404, data={'status': 'false', 'message': 'предоставлены не верные параметры'})
+
+    maps = generate_maps(_from, _to)
+    if not maps:
+        return JsonResponse(status=404, data={'status': 'false', 'message': 'путь не может быть построен'})
+    else:
+        return JsonResponse(status=200, data={'status': 'true', 'message': {
+            "ground_floor": maps['ground_floor'],
+            "first_floor": maps['first_floor'],
+            "second_floor": maps['second_floor'],
+            "third_floor": maps['third_floor']
+        }})
+
+
+def generate_maps(_from, _to):
+    if os.path.exists(f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg') and os.path.exists(
+            f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg') and os.path.exists(
+            f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg') and os.path.exists(
+            f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'):
+        return JsonResponse(status=200, data={'status': 'true', 'message': {
+            "ground_flour": f'media/map_output/from_{_from}_to_{_to}_ground_floor.jpg',
+            "first_flour": f'media/map_output/from_{_from}_to_{_to}_first_floor.jpg',
+            "second_flour": f'media/map_output/from_{_from}_to_{_to}_second_floor.jpg',
+            "third_flor": f'media/map_output/from_{_from}_to_{_to}_third_floor.jpg'}})
+
+    # генерирование маршрута
+    try:
+        maps_ = getPath(_from, _to)
+    except:
+        return False
+
+    maps = {}
+
+    maps['slug'] = f'{_from}_{_to}'
+
+    maps['ground_floor'] = maps_[0]
+    maps['first_floor'] = maps_[1]
+    maps['second_floor'] = maps_[2]
+    maps['third_floor'] = maps_[3]
+
+    return maps

@@ -22,3 +22,4 @@ services:
       - dj_tour
 volumes:
   static:
+  
